@@ -38,7 +38,7 @@ class SeedDump
     def serialize_if_required(attribute, options, value)
       klass = serialization_klass(attribute, options)
       klass.present? ?
-          serialized_value(klass, value.dup) : value_to_s(value)
+          serialized_value(klass, value.to_s.dup) : value_to_s(value)
     end
 
     def serialization_klass(attribute, options)

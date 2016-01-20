@@ -31,7 +31,22 @@ class SeedDump
     end
 
     def dump_attribute_new(attribute, value, options)
-      options[:import] ? value_to_s(value) : "#{attribute}: #{value_to_s(value)}"
+      value = serialize_if_required(attribute, options, value)
+      options[:import] ? value : "#{attribute}: #{value}"
+    end
+
+    def serialize_if_required(attribute, options, value)
+      klass = serialization_klass(attribute, options)
+      klass.present? ?
+          serialized_value(klass, value.dup) : value_to_s(value)
+    end
+
+    def serialization_klass(attribute, options)
+      options[:serialized_columns][attribute]
+    end
+
+    def serialized_value(klass, value)
+      klass.respond_to?(:dump) ? klass.dump(value).inspect : YAML.dump(value).inspect
     end
 
     def value_to_s(value)
@@ -87,7 +102,11 @@ class SeedDump
         io.write(",\n  ") unless last_batch
       end
 
-      io.write("\n])\n")
+      io.write("\n]")
+
+      io.write(', {validate: false}') unless options[:validate_while_import]
+
+      io.write(")\n")
 
       if options[:file].present?
         nil
